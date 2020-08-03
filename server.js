@@ -1,82 +1,30 @@
 const express = require("express");
-let mongoose = require("mongoose");
-let db = require("./models");
-const path = require("path");
+const logger = require("morgan");
+const mongoose = require("mongoose");
+const apiRoutes = require("./routes/apiRoutes")
+const htmlRoutes = require("./routes/htmlRoutes")
+
+const PORT = process.env.PORT || 3030;
 
 const app = express();
 
-const PORT = process.env.PORT || 3000;
-
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-
 app.use(express.static("public"));
+app.use(apiRoutes);
+app.use(htmlRoutes);
 
-mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/workout", {
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost/workout";
+mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useFindAndModify: false,
     useUnifiedTopology: true
-});
-//HTML routes----------------------------------------------
-app.get("/exercise", (req, res) => {
-    res.sendFile(path.join(__dirname, "./public/exercise.html"));
-});
+})
 
-app.get("/stats", (req, res) => {
-    res.sendFile(path.join(__dirname, "./public/stats.html"));
-});
 
-//api routes----------------------------------------------------
-
-//getLastWorkout
-app.get("/api/workouts", (_req, res) => {
-    db.Workout.find({}, (err, data) => {
-        if (err) {
-            console.error(err);
-        } else {
-            res.json(data);
-        }
-    });
-});
-
-//addExercise
-app.put("/api/workouts/:id", (req, res) => {
-    db.Workout.findOneAndUpdate({
-        "_id": req.params.id
-    },
-        { $push: { exercises: req.body } })
-        .then(data => {
-            res.json(data);
-        })
-        .catch(err => {
-            res.json(err);
-        });
-});
-
-//createWorkout
-
-app.post("/api/workouts", (req, res) => {
-    db.Workout.create(req.body)
-        .then(data => {
-            res.json(data);
-        })
-        .catch(err => {
-            res.json(err);
-        })
-});
-
-//getWorkoutsInRange
-app.get("/api/workouts/range", (_req, res) => {
-    db.Workout.find({}, (err, data) => {
-        if (err) {
-            console.error(err);
-        } else {
-            res.json(data);
-        }
-    });
-});
+app.use(apiRoutes);
+app.use(htmlRoutes);
 
 app.listen(PORT, () => {
     console.log(`App running on port ${PORT}!`);
 });
-
